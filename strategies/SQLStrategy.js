@@ -10,6 +10,7 @@ const defaultConfig = {
 
 module.exports = class SQLStrategy {
   constructor(config = defaultConfig) {
+    this.dbConfig = config;
     this.knex = Knex(config);
   }
 
@@ -27,10 +28,12 @@ module.exports = class SQLStrategy {
   }
 
   storeShop({ shop, accessToken, data = {} }, done) {
+    const baseQuery = `INTO shops (shopify_domain, access_token) VALUES ('${shop}', '${accessToken}')`;
+    const dbQuery = (this.dbConfig.hasOwnProperty('client') && this.dbConfig.client === 'pg')? 
+    `INSERT ${baseQuery} ON CONFLICT (shopify_domain) DO NOTHING` : `INSERT OR IGNORE ${baseQuery}`;
+    
     this.knex
-      .raw(
-        `INSERT OR IGNORE INTO shops (shopify_domain, access_token) VALUES ('${shop}', '${accessToken}')`
-      )
+      .raw(dbQuery)
       .then(result => {
         return done(null, accessToken);
       });
