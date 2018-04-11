@@ -30,7 +30,7 @@ module.exports = class SQLStrategy {
   storeShop({ shop, accessToken, data = {} }, done) {
     const baseQuery = `INTO shops (shopify_domain, access_token) VALUES ('${shop}', '${accessToken}')`;
     const dbQuery = (this.dbConfig.hasOwnProperty('client') && this.dbConfig.client === 'pg')? 
-    `INSERT ${baseQuery} ON CONFLICT (shopify_domain) DO NOTHING` : `INSERT OR IGNORE ${baseQuery}`;
+    `INSERT ${baseQuery} ON CONFLICT (shopify_domain) DO UPDATE SET access_token = EXCLUDED.access_token` : `INSERT OR IGNORE ${baseQuery}`;
     
     this.knex
       .raw(dbQuery)
