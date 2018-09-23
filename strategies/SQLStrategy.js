@@ -15,35 +15,35 @@ module.exports = class SQLStrategy {
   }
 
   initialize() {
-    return this.knex.schema
-      .createTableIfNotExists('shops', table => {
-        table.increments('id');
-        table.string('shopify_domain');
-        table.string('access_token');
-        table.unique('shopify_domain');
-      })
-      .catch(error => {
-        console.log(error);
-      });
+    return this.knex.schema.createTableIfNotExists('shops', table => {
+      table.increments('id');
+      table.string('shopify_domain');
+      table.string('access_token');
+      table.unique('shopify_domain');
+    });
   }
 
-  storeShop({ shop, accessToken, data = {} }, done) {
-    const baseQuery = `INTO shops (shopify_domain, access_token) VALUES ('${shop}', '${accessToken}')`;
-    const dbQuery = (this.dbConfig.hasOwnProperty('client') && this.dbConfig.client === 'pg')? 
-    `INSERT ${baseQuery} ON CONFLICT (shopify_domain) DO UPDATE SET access_token = EXCLUDED.access_token` : `INSERT OR IGNORE ${baseQuery}`;
-    
-    this.knex
-      .raw(dbQuery)
-      .then(result => {
-        return done(null, accessToken);
-      });
+  async storeShop({
+    shop,
+    accessToken
+  }) {
+    await this.knex.raw(
+      `INSERT INTO shops (
+          shopify_domain, access_token
+          ) VALUES ('${shop}', '${accessToken}')
+          ON CONFLICT (shopify_domain)
+          DO UPDATE SET
+            access_token = EXCLUDED.access_token`
+    );
+
+    return {
+      accessToken
+    };
   }
 
-  getShop({ shop }, done) {
-    this.knex('shops')
-      .where('shopify_domain', shop)
-      .then(result => {
-        return done(null, result);
-      });
+  getShop({
+    shop
+  }) {
+    return this.knex('shops').where('shopify_domain', shop)
   }
 };

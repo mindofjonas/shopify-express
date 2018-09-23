@@ -1,19 +1,23 @@
-module.exports = function withShop({ redirect } = { redirect: true }) {
+const {TEST_COOKIE_NAME, TOP_LEVEL_OAUTH_COOKIE_NAME} = require('../constants');
+
+module.exports = function withShop({ authBaseUrl } = {}) {
   return function verifyRequest(request, response, next) {
-    const { query: { shop }, session } = request;
+    const { query: { shop }, session, baseUrl } = request;
 
     if (session && session.accessToken) {
-      return next();
+      response.cookie(TOP_LEVEL_OAUTH_COOKIE_NAME);
+      next();
+      return;
     }
 
-    if (shop && redirect) {
-      return response.redirect(`/auth/shopify?shop=${shop}`);
+    response.cookie(TEST_COOKIE_NAME, '1');
+
+    if (shop) {
+      response.redirect(`${authBaseUrl || baseUrl}/auth?shop=${shop}`);
+      return;
     }
 
-    if (redirect) {
-      return response.redirect('/install');
-    }
-
-    return response.status(401).json('Unauthorized');
+    response.redirect('/install');
+    return;
   };
 };
